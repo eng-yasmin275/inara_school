@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import StudentModal from "@/app/components/StudentModal";
+import StudentDetailsModal from "@/app/components/StudentDetailsModal";
+
 
 type Student = {
   _id: string;
@@ -30,8 +32,13 @@ export default function StudentsPage() {
     absence: 0,
     results: [],
   });
+
+  const [detailsStudent, setDetailsStudent] = useState<Student | null>(null); // For details + grades
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [searchName, setSearchName] = useState("");
+  const [searchNationalId, setSearchNationalId] = useState("");
+  const [searchClass, setSearchClass] = useState("");
 
   // Fetch students
   const fetchStudents = async () => {
@@ -106,9 +113,42 @@ export default function StudentsPage() {
     }
   };
 
+  // 🔍 Filter logic
+  const filteredStudents = students.filter((s) => {
+    const matchName = s.name.toLowerCase().includes(searchName.toLowerCase());
+    const matchId = s.nationalId.includes(searchNationalId);
+    const matchClass = s.className.toLowerCase().includes(searchClass.toLowerCase());
+    return matchName && matchId && matchClass;
+  });
+
   return (
     <div className="p-6 text-right">
       <h1 className="text-2xl font-bold mb-4">إدارة الطلاب</h1>
+
+      {/* 🔍 Search Section */}
+      <div className="flex flex-wrap gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="بحث بالاسم"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+          className="border p-2 rounded w-64"
+        />
+        <input
+          type="text"
+          placeholder="بحث بالرقم القومي"
+          value={searchNationalId}
+          onChange={(e) => setSearchNationalId(e.target.value)}
+          className="border p-2 rounded w-64"
+        />
+        <input
+          type="text"
+          placeholder="بحث بالصف"
+          value={searchClass}
+          onChange={(e) => setSearchClass(e.target.value)}
+          className="border p-2 rounded w-64"
+        />
+      </div>
 
       <button
         onClick={() => setShowForm(true)}
@@ -117,6 +157,7 @@ export default function StudentsPage() {
         إضافة طالب جديد
       </button>
 
+      {/* === Add/Edit Form === */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
@@ -193,6 +234,7 @@ export default function StudentsPage() {
         </form>
       )}
 
+      {/* === Table === */}
       <table className="w-full border">
         <thead className="bg-gray-100">
           <tr>
@@ -206,7 +248,7 @@ export default function StudentsPage() {
           </tr>
         </thead>
         <tbody>
-          {students.map((stu) => (
+          {filteredStudents.map((stu) => (
             <tr key={stu._id}>
               <td className="border p-2">{stu.name}</td>
               <td className="border p-2">{stu.nationalId}</td>
@@ -215,45 +257,66 @@ export default function StudentsPage() {
               <td className="border p-2">{stu.phone}</td>
               <td className="border p-2">{stu.birthdate}</td>
               <td className="border p-2 flex gap-2 justify-center">
-                <button
-                  onClick={() => setSelectedStudent(stu)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded"
-                >
-                  تعديل
-                </button>
-                <button
-                  onClick={() => handleDelete(stu)}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  حذف
-                </button>
-              </td>
+  <button
+  onClick={() => setEditingStudent(stu)}
+  className="bg-yellow-500 text-white px-3 py-1 rounded"
+>
+  تعديل
+</button>
+
+<button
+  onClick={() => setDetailsStudent(stu)}
+  className="bg-blue-600 text-white px-3 py-1 rounded"
+>
+  عرض التفاصيل
+</button>
+
+
+
+  <button
+    onClick={() => handleDelete(stu)}
+    className="bg-red-600 text-white px-3 py-1 rounded"
+  >
+    حذف
+  </button>
+</td>
+
+
             </tr>
           ))}
         </tbody>
       </table>
 
-      {selectedStudent && (
-        <StudentModal
-          student={selectedStudent}
-          onClose={() => setSelectedStudent(null)}
-          onSave={async (updated) => {
-            const res = await fetch(`/api/students/${updated._id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(updated),
-            });
-            if (res.ok) {
-              setStudents(
-                students.map((s) => (s._id === updated._id ? updated : s))
-              );
-              setSelectedStudent(null);
-            } else {
-              alert("حدث خطأ أثناء الحفظ");
-            }
-          }}
-        />
-      )}
+   {/* Edit Modal */}
+{editingStudent && (
+  <StudentModal
+    student={editingStudent}
+    onClose={() => setEditingStudent(null)}
+    onSave={async (updated) => {
+      const res = await fetch(`/api/students/${updated._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        setStudents(students.map((s) => (s._id === updated._id ? updated : s)));
+        setEditingStudent(null);
+      } else {
+        alert("حدث خطأ أثناء الحفظ");
+      }
+    }}
+  />
+)}
+
+{/* Details Modal */}
+{detailsStudent && (
+  <StudentDetailsModal
+    student={detailsStudent}
+    onClose={() => setDetailsStudent(null)}
+  />
+)}
+
+
     </div>
   );
 }

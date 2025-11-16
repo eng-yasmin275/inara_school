@@ -53,20 +53,50 @@ export default function TeacherDashboard() {
       .catch(console.error);
   }, [token]);
 
-  // Fetch students for selected class & subject
-  const fetchStudents = () => {
-    if (!selectedClass || !selectedSubject || !token) return;
-    setLoading(true);
-    fetch(`/api/teacher/students?class=${selectedClass}&subject=${selectedSubject}`, {
+  const fetchStudents = async () => {
+  if (!selectedClass || !selectedSubject || !token) return;
+  setLoading(true);
+
+  try {
+    // 1️⃣ Fetch all students for the selected class
+    const res = await fetch(`/api/teacher/students?class=${selectedClass}&subject=${selectedSubject}`, {
       headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setStudents(data.students || []);
-        setLoading(false);
-      })
-      .catch(console.error);
-  };
+    });
+    const data = await res.json();
+    const fetchedStudents = data.students || [];
+
+    // 2️⃣ Fetch saved grades for this class & subject
+    const gradesRes = await fetch(
+      `/api/teacher/get-scores?className=${selectedClass}&subject=${selectedSubject}`
+    );
+    const gradesData = await gradesRes.json();
+    const savedGrades = gradesData.grades || [];
+
+    // 3️⃣ Merge saved grades into the student list
+    const merged = fetchedStudents.map((student: any) => {
+      const g = savedGrades.find((grade: any) => grade.nationalId === student.nationalId);
+      if (g) {
+        const result = {
+          subject: selectedSubject,
+          midterm1: g.midterm1,
+          finalTerm: g.finalTerm,
+          exercises: g.exercises,
+          classActivities: g.classActivities,
+          homework: g.homework,
+        };
+        return { ...student, results: [result] };
+      }
+      return student;
+    });
+
+    setStudents(merged);
+  } catch (err) {
+    console.error("Error fetching students or grades:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Update grade in state
   const handleGradeChange = (studentId: string, field: GradeField, value: number) => {

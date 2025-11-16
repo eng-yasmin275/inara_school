@@ -22,6 +22,13 @@ export default function Dashboard() {
         </Link>
 
         <Link
+          href="/dashboard/attendance"
+          className="p-6 bg-white rounded shadow hover:shadow-lg transition"
+        >
+          إدارة الحضور
+        </Link>
+
+        <Link
           href="/dashboard/supplies"
           className="p-6 bg-white rounded shadow hover:shadow-lg transition"
         >

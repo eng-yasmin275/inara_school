@@ -10,7 +10,7 @@ export default function Home() {
       <header className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-between py-6 px-4 md:px-0">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
-            <Image src="/inara_icon.png" alt="شعار المدرسة" width={64} height={64} className="object-cover" />
+            <Image src="/schoollogo.png" alt="شعار المدرسة" width={64} height={64} className="object-cover" />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-blue-700">نظام إدارة المدرسة</h1>
         </div>
@@ -41,10 +41,10 @@ export default function Home() {
         <div className="md:w-1/2 w-full bg-white p-6 flex flex-col justify-center">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-blue-700 flex items-center gap-2">شكر وتقدير</h2>
-            <Image src="/fajr_icon.jpeg" alt="شعار الفجر" width={48} height={48} className="object-contain" />
+            <Image src="/schoollogo.png" alt="شعار الفجر" width={48} height={48} className="object-contain" />
           </div>
           <p className="text-gray-700 text-lg md:text-xl">
-            شكر خاص لمنظمة <span className="font-semibold text-blue-600">إنارة</span> ومؤسسة <span className="font-semibold text-blue-600">الفجر العالمية</span> لدعمهما هذه المبادرة التعليمية لطلبة فلسطين في مصر.
+            شكر خاص لمنظمة <span className="font-semibold text-blue-600">.....</span> ومؤسسة <span className="font-semibold text-blue-600">......</span> لدعمهما هذه المبادرة التعليمية لطلبة فلسطين في مصر.
             هذه المبادرة تهدف لدعم التعليم وتسهيل متابعة شؤون الطلبة وتوفير الموارد اللازمة لهم.
           </p>
         </div>
@@ -59,16 +59,24 @@ export default function Home() {
       </section>
 
       {/* Gallery Section with Hover Zoom Effect */}
-      <section className="w-full max-w-5xl bg-white rounded-2xl shadow-lg p-6 mt-6">
-        <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">المعرض</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-48 rounded-xl bg-gray-100 flex items-center justify-center shadow transform transition-transform duration-300 hover:scale-105">
-              صورة {index + 1}
-            </div>
-          ))}
-        </div>
-      </section>
+<section className="w-full max-w-5xl bg-white rounded-2xl shadow-lg p-6 mt-6">
+  <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">المعرض</h2>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+    {["/school1.jpg", "school2.jpg", "school3.jpg", "school4.jpg", "school5.jpg", "school6.jpg"].map((img, index) => (
+      <div
+        key={index}
+        className="h-48 overflow-hidden rounded-xl bg-gray-100 shadow transform transition-transform duration-300 hover:scale-105"
+      >
+        <img
+          src={`/gallery/${img}`}
+          alt={`Gallery ${index + 1}`}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    ))}
+  </div>
+</section>
 
       <footer className="w-full max-w-5xl mt-12 text-center text-gray-500">
         &copy; 2025 جميع الحقوق محفوظة
