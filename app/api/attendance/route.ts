@@ -90,57 +90,57 @@ export async function POST(req: Request) {
   }
 }
 
-// ------------------- POST Add Holiday -------------------
-export async function POST_HOLIDAY(req: Request) {
-  try {
-    const { schoolYear, month, year, day } = await req.json();
-    if (!schoolYear || !month || !year || !day) {
-      return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
-    }
+// // ------------------- POST Add Holiday -------------------
+// export async function POST_HOLIDAY(req: Request) {
+//   try {
+//     const { schoolYear, month, year, day } = await req.json();
+//     if (!schoolYear || !month || !year || !day) {
+//       return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
+//     }
 
-    // Add to Holiday table
-    const exists = await Holiday.findOne({ schoolYear, month, year, day });
-    if (!exists) {
-      await Holiday.create({ schoolYear, month, year, day });
-    }
+//     // Add to Holiday table
+//     const exists = await Holiday.findOne({ schoolYear, month, year, day });
+//     if (!exists) {
+//       await Holiday.create({ schoolYear, month, year, day });
+//     }
 
-    // Apply holiday to all attendance records
-    const allRecords = await Attendance.find({ month, year, schoolYear });
-    for (const rec of allRecords) {
-      if (!rec.holidays.includes(day)) {
-        rec.holidays.push(day);
-        await rec.save();
-      }
-    }
+//     // Apply holiday to all attendance records
+//     const allRecords = await Attendance.find({ month, year, schoolYear });
+//     for (const rec of allRecords) {
+//       if (!rec.holidays.includes(day)) {
+//         rec.holidays.push(day);
+//         await rec.save();
+//       }
+//     }
 
-    return NextResponse.json({ message: `Holiday added on day ${day}` });
-  } catch (err) {
-    console.error("POST Holiday Error:", err);
-    return NextResponse.json({ error: "Error adding holiday" }, { status: 500 });
-  }
-}
+//     return NextResponse.json({ message: `Holiday added on day ${day}` });
+//   } catch (err) {
+//     console.error("POST Holiday Error:", err);
+//     return NextResponse.json({ error: "Error adding holiday" }, { status: 500 });
+//   }
+// }
 
-// ------------------- POST Remove Holiday -------------------
-export async function POST_HOLIDAY_REMOVE(req: Request) {
-  try {
-    const { schoolYear, month, year, day } = await req.json();
-    if (!schoolYear || !month || !year || !day) {
-      return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
-    }
+// // ------------------- POST Remove Holiday -------------------
+// export async function POST_HOLIDAY_REMOVE(req: Request) {
+//   try {
+//     const { schoolYear, month, year, day } = await req.json();
+//     if (!schoolYear || !month || !year || !day) {
+//       return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
+//     }
 
-    // Remove from Holiday table
-    await Holiday.deleteOne({ schoolYear, month, year, day });
+//     // Remove from Holiday table
+//     await Holiday.deleteOne({ schoolYear, month, year, day });
 
-    // Remove from all attendance records
-    const allRecords = await Attendance.find({ month, year, schoolYear });
-    for (const rec of allRecords) {
-    rec.holidays = (rec.holidays || []).filter((h: number) => h !== day);
-      await rec.save();
-    }
+//     // Remove from all attendance records
+//     const allRecords = await Attendance.find({ month, year, schoolYear });
+//     for (const rec of allRecords) {
+//     rec.holidays = (rec.holidays || []).filter((h: number) => h !== day);
+//       await rec.save();
+//     }
 
-    return NextResponse.json({ message: `Holiday removed from day ${day}` });
-  } catch (err) {
-    console.error("POST Holiday Remove Error:", err);
-    return NextResponse.json({ error: "Error removing holiday" }, { status: 500 });
-  }
-}
+//     return NextResponse.json({ message: `Holiday removed from day ${day}` });
+//   } catch (err) {
+//     console.error("POST Holiday Remove Error:", err);
+//     return NextResponse.json({ error: "Error removing holiday" }, { status: 500 });
+//   }
+// }
