@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import StudentModal from "@/app/components/StudentModal";
 import StudentDetailsModal from "@/app/components/StudentDetailsModal";
 
@@ -123,7 +124,19 @@ export default function StudentsPage() {
 
   return (
     <div className="p-6 text-right">
+      <div className="flex justify-between items-center mb-4">
+
+    {/* Page title on the right */}
       <h1 className="text-2xl font-bold mb-4">إدارة الطلاب</h1>
+
+     {/* Back button on the left */}
+    <Link href="/dashboard">
+      <button className="bg-blue-500 text-white px-4 py-2 rounded">
+        ← العودة
+      </button>
+    </Link>
+
+  </div>
 
       {/* 🔍 Search Section */}
       <div className="flex flex-wrap gap-4 mb-4">
@@ -312,6 +325,7 @@ export default function StudentsPage() {
 {detailsStudent && (
   <StudentDetailsModal
     student={detailsStudent}
+
     onClose={() => setDetailsStudent(null)}
   />
 )}

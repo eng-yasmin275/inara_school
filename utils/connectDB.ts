@@ -1,16 +1,25 @@
 import mongoose from "mongoose";
 
-const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
+let cached = (global as any).mongoose;
 
-  try {
-    const uri = process.env.MONGO_URI; // make sure .env.local has this
-    if (!uri) throw new Error("MONGO_URI is missing in .env.local");
-    await mongoose.connect(uri);
-    console.log("✅ MongoDB connected");
-  } catch (err) {
-    console.error("❌ MongoDB connection failed:", err);
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
+
+async function connectDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      dbName: "schoolDB", // your DB name
+    };
+
+    cached.promise = mongoose.connect(process.env.MONGO_URI!, opts).then((mongoose) => mongoose);
   }
-};
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
 
 export default connectDB;

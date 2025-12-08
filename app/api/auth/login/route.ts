@@ -1,30 +1,57 @@
-// ===== app/api/auth/login/route.ts =====
-import { NextRequest, NextResponse } from 'next/server';
-
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import connectDB from '@/utils/connectDB';
-import User from '@/models/User';
-
-connectDB(); // اتأكد من الاتصال بقاعدة البيانات
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import connectDB from "@/utils/connectDB";
+import User from "@/models/User";
 
 export async function POST(req: NextRequest) {
+  await connectDB();
   try {
-    const { email, password } = await req.json();
+    // Accept JSON or Form POST
+    let email, password;
+
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      email = body.email;
+      password = body.password;
+    } else {
+      const formData = await req.formData();
+      email = formData.get("email")?.toString();
+      password = formData.get("password")?.toString();
+    }
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
+    }
 
     const user = await User.findOne({ email });
-    if (!user) return NextResponse.json({ message: 'المستخدم غير موجود' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return NextResponse.json({ message: 'كلمة المرور خاطئة' }, { status: 401 });
+    if (!isMatch) return NextResponse.json({ error: "Wrong password" }, { status: 401 });
 
-      // ✅ هذا هو السطر الجديد لتوليد التوكن
-    const secret = process.env.JWT_SECRET || 'defaultsecret';
-    const token = jwt.sign({ id: user._id, email: user.email }, secret, { expiresIn: '1d' });
+    const token = jwt.sign(
+      { id: user._id, email },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "1d" }
+    );
 
-    return NextResponse.json({ token });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set({
+      name: "token",
+      value: token,
+      httpOnly: true,
+      path: "/",
+      maxAge: 24 * 60 * 60,
+      sameSite: "lax",
+      secure: false,
+    });
+
+    return response;
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ message: 'حدث خطأ' }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

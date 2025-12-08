@@ -58,18 +58,35 @@ export default function SuppliesPage() {
 
   return (
    <div className="p-6 flex flex-col">
-  {/* العنوان مع زر التقارير */}
-  <div className="flex justify-between items-center mb-6">
+    {/* Title + Buttons Row */}
+  <div className="flex justify-between items-center mb-6 flex-row-reverse">
+
+    {/* Buttons (Left side) */}
+    <div className="flex gap-3">
+
+      {/* Reports Button */}
+      <Link href="/dashboard/supplies/reports">
+        <button className="bg-green-500 text-white px-4 py-2 rounded">
+          📊 التقارير
+        </button>
+      </Link>
+
+      {/* Back Button in same style */}
+      <Link href="/dashboard">
+        <button className="bg-blue-500 text-white px-4 py-2 rounded">
+          ← العودة
+        </button>
+      </Link>
+
+    </div>
+
+    {/* Page Title (Right side) */}
     <h1 className="text-3xl font-bold text-blue-700">
       🛒 إدارة مخزون المستلزمات
     </h1>
 
-    {/* زر الذهاب إلى صفحة التقارير */}
-    <Link href="/dashboard/supplies/reports">
-      <button className="bg-green-500 text-white px-4 py-2 rounded">
-        📊 التقارير
-      </button>
-    </Link>
+    
+
   </div>
 
   {/* نموذج إضافة صنف جديد */}

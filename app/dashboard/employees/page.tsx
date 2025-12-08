@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+
 
 type Employee = {
   _id: string;
@@ -125,7 +127,20 @@ export default function EmployeesPage() {
 
   return (
     <div className="p-6 text-right">
-      <h1 className="text-2xl font-bold mb-4">إدارة الموظفين</h1>
+        <div className="flex justify-between items-center mb-4">
+
+    {/* Page title on the right */}
+    <h1 className="text-2xl font-bold">إدارة الموظفين</h1>
+
+     {/* Back button on the left */}
+    <Link href="/dashboard">
+      <button className="bg-blue-500 text-white px-4 py-2 rounded">
+        ← العودة
+      </button>
+    </Link>
+
+  </div>
+      
 
       <button
         onClick={() => setShowForm(true)}

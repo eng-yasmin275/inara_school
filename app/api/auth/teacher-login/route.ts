@@ -3,39 +3,40 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/utils/connectDB';
 import Employee from '@/models/Employee';
 
-connectDB();
+await connectDB(); // Important to await DB connection
 
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
 
-    // Find employee with username
-    const employee = await Employee.findOne({ username });
-    if (!employee) 
-      return NextResponse.json({ message: 'المستخدم غير موجود' }, { status: 401 });
-
-    // Compare password directly (plain text)
-    if (!employee.password || employee.password !== password) {
-      return NextResponse.json({ message: 'كلمة المرور خاطئة' }, { status: 401 });
+    if (!username || !password) {
+      return NextResponse.json({ message: 'يرجى إدخال اسم المستخدم وكلمة المرور' }, { status: 400 });
     }
 
-    // Generate JWT
-    const secret = process.env.JWT_SECRET || 'defaultsecret';
-    const token = jwt.sign(
-      {
-        id: employee._id,
-        username: employee.username,
-        role: employee.role,
-        classes: employee.classes,
-        subjects: employee.subjects,
-      },
-      secret,
-      { expiresIn: '1d' }
-    );
+    const teacher = await Employee.findOne({ username });
+    if (!teacher) return NextResponse.json({ message: 'المستخدم غير موجود' }, { status: 401 });
 
-    return NextResponse.json({ token, role: employee.role });
+    if (!teacher.password || teacher.password !== password)
+      return NextResponse.json({ message: 'كلمة المرور خاطئة' }, { status: 401 });
+
+    const secret = process.env.JWT_SECRET || 'secret';
+    const token = jwt.sign({ id: teacher._id, username: teacher.username }, secret, { expiresIn: '1d' });
+
+    // Set HTTP-only cookie
+    const response = NextResponse.json({ message: 'تم تسجيل الدخول', token });
+    response.cookies.set({
+      name: 'teacherToken',
+      value: token,
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24, // 1 day
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return response;
   } catch (err) {
-    console.error(err);
+    console.error('Teacher login error:', err);
     return NextResponse.json({ message: 'حدث خطأ' }, { status: 500 });
   }
 }

@@ -1,79 +1,146 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/connectDB";
 import Attendance from "@/models/Attendance";
+import Holiday from "@/models/Holiday";
 
 connectDB();
 
+// ------------------- GET Attendance -------------------
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category");
-  const className = searchParams.get("className") || "";
-  const month = Number(searchParams.get("month"));
-  const year = Number(searchParams.get("year"));
-
-  if (!category || !month || !year) {
-    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
-  }
-
   try {
-    const records = await Attendance.find({ category, className, month, year });
-    const data: any = {};
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category") || "";
+    const className = searchParams.get("className") || "";
+    const month = Number(searchParams.get("month"));
+    const year = Number(searchParams.get("year"));
+    const schoolYear = searchParams.get("schoolYear") || "";
 
-    const holidays: number[] = [];
-
-records.forEach((rec) => {
-  data[rec.personId] = rec.attendance;
-
-  (rec.holidays || []).forEach((h: number) => {
-    if (typeof h === "number" && !Number.isNaN(h)) {
-      if (!holidays.includes(h)) {
-        holidays.push(h);
-      }
+    if (!month || !year || !schoolYear) {
+      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
     }
-  });
-});
 
+    // Fetch attendance
+    const records = await Attendance.find({ category, className, month, year, schoolYear });
 
+    const data: { [personId: string]: boolean[] } = {};
+    records.forEach(rec => {
+      data[rec.personId] = rec.attendance;
+    });
 
+    // Fetch all holidays for this month/year/schoolYear
+    const holidaysRecords = await Holiday.find({ month, year, schoolYear });
+    const holidays = holidaysRecords.map(h => h.day);
 
     return NextResponse.json({ attendance: data, holidays });
   } catch (err) {
-    console.error(err);
+    console.error("GET Attendance Error:", err);
     return NextResponse.json({ error: "Error fetching attendance" }, { status: 500 });
   }
 }
 
+// ------------------- POST Save All Attendance -------------------
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const { personId, category, className, month, year, attendance, holidays } = data;
+    const body = await req.json();
+    const { schoolYear, month, year, attendanceData, holidays } = body;
 
-    if (!personId || !category || !month || !year || !attendance) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!month || !year || !schoolYear || !attendanceData) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const existing = await Attendance.findOne({ personId, category, className, month, year });
+    // Get today for blocking future attendance
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
 
-    if (existing) {
-      existing.attendance = attendance;
-      existing.holidays = holidays;
-      await existing.save();
-      return NextResponse.json(existing);
+    for (const personId in attendanceData) {
+      let attArray: boolean[] = attendanceData[personId];
+      
+      // Block future days
+      attArray = attArray.map((val, idx) => {
+        const day = idx + 1;
+        if (year === currentYear && month === currentMonth && day > currentDay) {
+          return false; // cannot mark future attendance
+        }
+        return val;
+      });
+
+      await Attendance.findOneAndUpdate(
+        { personId, month, year, schoolYear },
+        { attendance: attArray, holidays },
+        { upsert: true, new: true }
+      );
     }
 
-    const newRecord = await Attendance.create({
-      personId,
-      category,
-      className,
-      month,
-      year,
-      attendance,
-      holidays,
-    });
+    // Update holidays table
+    if (holidays && holidays.length > 0) {
+      for (const day of holidays) {
+        const exists = await Holiday.findOne({ day, month, year, schoolYear });
+        if (!exists) {
+          await Holiday.create({ day, month, year, schoolYear });
+        }
+      }
+    }
 
-    return NextResponse.json(newRecord);
+    return NextResponse.json({ message: "Attendance saved successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("POST SaveAll Error:", err);
     return NextResponse.json({ error: "Error saving attendance" }, { status: 500 });
+  }
+}
+
+// ------------------- POST Add Holiday -------------------
+export async function POST_HOLIDAY(req: Request) {
+  try {
+    const { schoolYear, month, year, day } = await req.json();
+    if (!schoolYear || !month || !year || !day) {
+      return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
+    }
+
+    // Add to Holiday table
+    const exists = await Holiday.findOne({ schoolYear, month, year, day });
+    if (!exists) {
+      await Holiday.create({ schoolYear, month, year, day });
+    }
+
+    // Apply holiday to all attendance records
+    const allRecords = await Attendance.find({ month, year, schoolYear });
+    for (const rec of allRecords) {
+      if (!rec.holidays.includes(day)) {
+        rec.holidays.push(day);
+        await rec.save();
+      }
+    }
+
+    return NextResponse.json({ message: `Holiday added on day ${day}` });
+  } catch (err) {
+    console.error("POST Holiday Error:", err);
+    return NextResponse.json({ error: "Error adding holiday" }, { status: 500 });
+  }
+}
+
+// ------------------- POST Remove Holiday -------------------
+export async function POST_HOLIDAY_REMOVE(req: Request) {
+  try {
+    const { schoolYear, month, year, day } = await req.json();
+    if (!schoolYear || !month || !year || !day) {
+      return NextResponse.json({ error: "Missing holiday fields" }, { status: 400 });
+    }
+
+    // Remove from Holiday table
+    await Holiday.deleteOne({ schoolYear, month, year, day });
+
+    // Remove from all attendance records
+    const allRecords = await Attendance.find({ month, year, schoolYear });
+    for (const rec of allRecords) {
+    rec.holidays = (rec.holidays || []).filter((h: number) => h !== day);
+      await rec.save();
+    }
+
+    return NextResponse.json({ message: `Holiday removed from day ${day}` });
+  } catch (err) {
+    console.error("POST Holiday Remove Error:", err);
+    return NextResponse.json({ error: "Error removing holiday" }, { status: 500 });
   }
 }

@@ -1,11 +1,41 @@
-// ===== app/page.tsx (Home Page - Fajr Logo Opposite Title + Gallery Hover Effect + Teacher Login) =====
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const [popupMessage, setPopupMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loggedOut = searchParams.get('loggedOut');
+    const authMessage = searchParams.get('authMessage');
+
+    if (loggedOut === '1') {
+      setPopupMessage('تم تسجيل الخروج بنجاح ✅');
+    } else if (authMessage === 'admin') {
+      setPopupMessage('❌ يجب تسجيل الدخول كمسؤول للوصول إلى لوحة التحكم');
+    } else if (authMessage === 'teacher') {
+      setPopupMessage('❌ يجب تسجيل الدخول كمعلم للوصول إلى لوحة المعلم');
+    }
+
+    if (loggedOut === '1' || authMessage) {
+      const timer = setTimeout(() => setPopupMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-blue-50 to-white p-6">
+      {/* Popup Toast */}
+      {popupMessage && (
+        <div className="fixed top-6 right-6 bg-green-500 text-white px-4 py-3 rounded shadow-lg animate-fade-in-out z-50">
+          {popupMessage}
+        </div>
+      )}
+
       {/* Header */}
       <header className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-between py-6 px-4 md:px-0">
         <div className="flex items-center gap-4">
@@ -33,7 +63,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Banner and Thank You Section with Fajr Logo opposite title */}
+      {/* Banner and Thank You Section */}
       <section className="w-full max-w-5xl mt-6 rounded-2xl overflow-hidden shadow-lg flex flex-col md:flex-row items-center">
         <div className="md:w-1/2 w-full">
           <Image src="/school1.avif" alt="صورة المدرسة" width={600} height={400} className="w-full h-auto object-cover" />
@@ -58,25 +88,25 @@ export default function Home() {
         </p>
       </section>
 
-      {/* Gallery Section with Hover Zoom Effect */}
-<section className="w-full max-w-5xl bg-white rounded-2xl shadow-lg p-6 mt-6">
-  <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">المعرض</h2>
+      {/* Gallery Section */}
+      <section className="w-full max-w-5xl bg-white rounded-2xl shadow-lg p-6 mt-6">
+        <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">المعرض</h2>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-    {["/school1.jpg", "school2.jpg", "school3.jpg", "school4.jpg", "school5.jpg", "school6.jpg"].map((img, index) => (
-      <div
-        key={index}
-        className="h-48 overflow-hidden rounded-xl bg-gray-100 shadow transform transition-transform duration-300 hover:scale-105"
-      >
-        <img
-          src={`/gallery/${img}`}
-          alt={`Gallery ${index + 1}`}
-          className="w-full h-full object-cover"
-        />
-      </div>
-    ))}
-  </div>
-</section>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {["/school1.jpg","school2.jpg","school3.jpg","school4.jpg","school5.jpg","school6.jpg"].map((img, index) => (
+            <div
+              key={index}
+              className="h-48 overflow-hidden rounded-xl bg-gray-100 shadow transform transition-transform duration-300 hover:scale-105"
+            >
+              <img
+                src={`/gallery/${img}`}
+                alt={`Gallery ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <footer className="w-full max-w-5xl mt-12 text-center text-gray-500">
         &copy; 2025 جميع الحقوق محفوظة

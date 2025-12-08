@@ -32,73 +32,88 @@ export default function TeacherDashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Load token after mount
+  // Load token and saved classes/subjects after mount
   useEffect(() => {
     setMounted(true);
-    const savedToken = localStorage.getItem('teacherToken');
+
+    // Prefer cookie first
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('teacherToken='))
+      ?.split('=')[1];
+
+    const savedToken = cookieToken || localStorage.getItem('teacherToken');
+    const savedClasses = localStorage.getItem('teacherClasses');
+    const savedSubjects = localStorage.getItem('teacherSubjects');
+
     if (savedToken) setToken(savedToken);
+    if (savedClasses) setTeacherClasses(JSON.parse(savedClasses));
+    if (savedSubjects) setTeacherSubjects(JSON.parse(savedSubjects));
   }, []);
 
   // Fetch classes & subjects assigned to teacher
   useEffect(() => {
     if (!token) return;
+
     fetch(`/api/teacher/students`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
-        setTeacherClasses(data.teacherClasses || []);
-        setTeacherSubjects(data.teacherSubjects || []);
+        const classes = data.teacherClasses || [];
+        const subjects = data.teacherSubjects || [];
+        setTeacherClasses(classes);
+        setTeacherSubjects(subjects);
+
+        localStorage.setItem('teacherClasses', JSON.stringify(classes));
+        localStorage.setItem('teacherSubjects', JSON.stringify(subjects));
       })
       .catch(console.error);
   }, [token]);
 
   const fetchStudents = async () => {
-  if (!selectedClass || !selectedSubject || !token) return;
-  setLoading(true);
+    if (!selectedClass || !selectedSubject || !token) return;
+    setLoading(true);
 
-  try {
-    // 1️⃣ Fetch all students for the selected class
-    const res = await fetch(`/api/teacher/students?class=${selectedClass}&subject=${selectedSubject}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    const fetchedStudents = data.students || [];
+    try {
+      const res = await fetch(`/api/teacher/students?class=${selectedClass}&subject=${selectedSubject}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const fetchedStudents = data.students || [];
 
-    // 2️⃣ Fetch saved grades for this class & subject
-    const gradesRes = await fetch(
-      `/api/teacher/get-scores?className=${selectedClass}&subject=${selectedSubject}`
-    );
-    const gradesData = await gradesRes.json();
-    const savedGrades = gradesData.grades || [];
+      const gradesRes = await fetch(`/api/teacher/get-scores?className=${selectedClass}&subject=${selectedSubject}`);
+      const gradesData = await gradesRes.json();
+      const savedGrades = gradesData.grades || [];
 
-    // 3️⃣ Merge saved grades into the student list
-    const merged = fetchedStudents.map((student: any) => {
-      const g = savedGrades.find((grade: any) => grade.nationalId === student.nationalId);
-      if (g) {
-        const result = {
-          subject: selectedSubject,
-          midterm1: g.midterm1,
-          finalTerm: g.finalTerm,
-          exercises: g.exercises,
-          classActivities: g.classActivities,
-          homework: g.homework,
-        };
-        return { ...student, results: [result] };
-      }
-      return student;
-    });
+      const merged = fetchedStudents.map((student: any) => {
+        const g = savedGrades.find((grade: any) => grade.nationalId === student.nationalId);
+        if (g) {
+          return {
+            ...student,
+            results: [
+              {
+                subject: selectedSubject,
+                midterm1: g.midterm1,
+                finalTerm: g.finalTerm,
+                exercises: g.exercises,
+                classActivities: g.classActivities,
+                homework: g.homework,
+              },
+            ],
+          };
+        }
+        return student;
+      });
 
-    setStudents(merged);
-  } catch (err) {
-    console.error("Error fetching students or grades:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      setStudents(merged);
+    } catch (err) {
+      console.error("Error fetching students or grades:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-  // Update grade in state
   const handleGradeChange = (studentId: string, field: GradeField, value: number) => {
     setStudents((prev) =>
       prev.map((s) => {
@@ -109,7 +124,6 @@ export default function TeacherDashboard() {
           result = { subject: selectedSubject };
           s.results.push(result);
         }
-
         result[field] = value;
 
         return { ...s };
@@ -117,7 +131,6 @@ export default function TeacherDashboard() {
     );
   };
 
-  // Save all grades to backend (Grades collection)
   const saveAllGrades = async () => {
     if (!token || !selectedSubject) return;
     setSaving(true);
@@ -147,20 +160,33 @@ export default function TeacherDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    // Remove localStorage and redirect
+    localStorage.removeItem('teacherToken');
+    localStorage.removeItem('teacherClasses');
+    localStorage.removeItem('teacherSubjects');
+
+    // Remove cookie
+    document.cookie = 'teacherToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+  window.location.href = '/?loggedOut=1';
+  };
+
   if (!mounted) return null;
   if (!token) return <p className="p-6">يجب تسجيل الدخول للوصول للوحة المعلم</p>;
 
   return (
     <div className="p-6 text-right">
-      <h1 className="text-2xl font-bold mb-4">لوحة المعلم – تسجيل الدرجات</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">لوحة المعلم – تسجيل الدرجات</h1>
+        <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded">
+          تسجيل الخروج
+        </button>
+      </div>
 
       {/* Class & Subject Selection */}
       <div className="flex gap-4 mb-6">
-        <select
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          className="border p-2 rounded"
-        >
+        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="border p-2 rounded">
           <option value="">اختر الصف</option>
           {teacherClasses.map((cls) => (
             <option key={cls} value={cls}>
@@ -169,11 +195,7 @@ export default function TeacherDashboard() {
           ))}
         </select>
 
-        <select
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-          className="border p-2 rounded"
-        >
+        <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="border p-2 rounded">
           <option value="">اختر المادة</option>
           {teacherSubjects.map((subj) => (
             <option key={subj} value={subj}>
@@ -207,12 +229,7 @@ export default function TeacherDashboard() {
             <tbody>
               {students.map((student) => {
                 const result = student.results.find((r) => r.subject === selectedSubject) || { subject: selectedSubject };
-                const total =
-                  (result.midterm1 || 0) +
-                  (result.finalTerm || 0) +
-                  (result.exercises || 0) +
-                  (result.classActivities || 0) +
-                  (result.homework || 0);
+                const total = (result.midterm1 || 0) + (result.finalTerm || 0) + (result.exercises || 0) + (result.classActivities || 0) + (result.homework || 0);
 
                 return (
                   <tr key={student._id}>
@@ -220,12 +237,7 @@ export default function TeacherDashboard() {
                     <td className="border p-2">{student.className}</td>
                     {( ['midterm1','finalTerm','exercises','classActivities','homework'] as GradeField[] ).map((f) => (
                       <td className="border p-2" key={f}>
-                        <input
-                          type="number"
-                          value={result[f] ?? ''}
-                          onChange={(e) => handleGradeChange(student._id, f, Number(e.target.value))}
-                          className="border p-1 w-16"
-                        />
+                        <input type="number" value={result[f] ?? ''} onChange={(e) => handleGradeChange(student._id, f, Number(e.target.value))} className="border p-1 w-16" />
                       </td>
                     ))}
                     <td className="border p-2">{total}</td>
@@ -235,11 +247,7 @@ export default function TeacherDashboard() {
             </tbody>
           </table>
 
-          <button
-            onClick={saveAllGrades}
-            disabled={saving}
-            className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
-          >
+          <button onClick={saveAllGrades} disabled={saving} className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
             {saving ? 'جاري الحفظ...' : 'حفظ جميع الدرجات'}
           </button>
         </div>
