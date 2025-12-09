@@ -1,4 +1,6 @@
 'use client';
+import { redirect } from "next/navigation";
+
 
 import { useEffect, useState } from 'react';
 
@@ -173,7 +175,7 @@ export default function TeacherDashboard() {
   };
 
   if (!mounted) return null;
-  if (!token) return <p className="p-6">يجب تسجيل الدخول للوصول للوحة المعلم</p>;
+  if (!token) redirect("/?authMessage=teacher");
 
   return (
     <div className="p-6 text-right">
@@ -237,7 +239,7 @@ export default function TeacherDashboard() {
                     <td className="border p-2">{student.className}</td>
                     {( ['midterm1','finalTerm','exercises','classActivities','homework'] as GradeField[] ).map((f) => (
                       <td className="border p-2" key={f}>
-                        <input type="number" value={result[f] ?? ''} onChange={(e) => handleGradeChange(student._id, f, Number(e.target.value))} className="border p-1 w-16" />
+                        <input type="number"   name={`${student._id}-${f}`} value={result[f] ?? ''} onChange={(e) => handleGradeChange(student._id, f, Number(e.target.value))} className="border p-1 w-16" />
                       </td>
                     ))}
                     <td className="border p-2">{total}</td>

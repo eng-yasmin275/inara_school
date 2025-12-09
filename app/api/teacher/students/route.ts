@@ -4,9 +4,10 @@ import Employee from "@/models/Employee";
 import Student from "@/models/Student";
 import jwt from "jsonwebtoken";
 
-connectDB();
 
 export async function GET(req: NextRequest) {
+   await connectDB();
+
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {

@@ -2,14 +2,15 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { redirect } from "next/navigation";
+import LogoutButton from "../components/LogoutButton";
 
 export default function DashboardPage() {
   const token = cookies().get("token")?.value;
 
-  if (!token) redirect("/login"); // no token → redirect
+  if (!token) redirect("/login");
 
   try {
-    jwt.verify(token, process.env.JWT_SECRET || "secret"); // token must be valid
+    jwt.verify(token, process.env.JWT_SECRET || "secret");
   } catch {
     redirect("/login");
   }
@@ -18,11 +19,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">لوحة التحكم</h1>
-        <form method="POST" action="/api/auth/logout">
-          <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
-            تسجيل الخروج
-          </button>
-        </form>
+        <LogoutButton />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -3,10 +3,11 @@ import connectDB from "@/utils/connectDB";
 import Employee from "@/models/Employee";
 
 // Connect to DB
-connectDB();
 
 // Update employee
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
+   await connectDB();
+
   try {
     const data = await req.json();
 
@@ -39,6 +40,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 // Delete employee
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+   await connectDB();
+
+  
   try {
     const deleted = await Employee.findByIdAndDelete(params.id);
     if (!deleted) {

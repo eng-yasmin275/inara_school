@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/utils/connectDB';
 import Employee from '@/models/Employee';
 
-await connectDB(); // Important to await DB connection
 
 export async function POST(req: NextRequest) {
+  await connectDB(); // Important to await DB connection
+
   try {
     const { username, password } = await req.json();
 

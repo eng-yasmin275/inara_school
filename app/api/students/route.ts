@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/connectDB";
 import Student from "@/models/Student";
 
-connectDB();
 
 export async function GET() {
+   await connectDB();
+
   try {
     const students = await Student.find();
     return NextResponse.json(students);
@@ -14,6 +15,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+     await connectDB();
+  
   try {
     const data = await req.json();
 
@@ -42,6 +45,8 @@ export async function POST(req: Request) {
 
 
 export async function PUT(req: Request) {
+      await connectDB();
+
   try {
     const data = await req.json();
     const { _id, ...fields } = data;
@@ -83,6 +88,8 @@ export async function PUT(req: Request) {
 
 
 export async function DELETE(req: Request) {
+      await connectDB();
+
   try {
     const data = await req.json();
     const { _id } = data;

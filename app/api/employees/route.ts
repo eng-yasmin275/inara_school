@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/connectDB";
 import Employee from "@/models/Employee";
 
-connectDB();
 
 // Get all employees
 export async function GET() {
+   await connectDB();
+
   try {
     const employees = await Employee.find();
     return NextResponse.json(employees);
@@ -17,6 +18,8 @@ export async function GET() {
 
 // Add a new employee
 export async function POST(req: Request) {
+   await connectDB();
+  
   try {
     const data = await req.json();
 

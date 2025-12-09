@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/utils/connectDB';
 import Student from '@/models/Student';
 
-connectDB();
 
 type Result = {
   subject: string;
@@ -14,6 +13,8 @@ type Result = {
 };
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+   await connectDB();
+
   try {
     const studentId = params.id;
     const { subject, field, value } = await req.json();

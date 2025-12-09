@@ -4,8 +4,9 @@ import connectDB from "@/lib/mongodb";
 import Grade from "@/models/Grade";
 
 export async function GET(req: Request) {
+      await connectDB();
+
   try {
-    await connectDB();
     const { searchParams } = new URL(req.url);
     const nationalId = searchParams.get("nationalId");
 

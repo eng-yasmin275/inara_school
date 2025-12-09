@@ -3,9 +3,10 @@ import connectDB from "@/utils/connectDB";
 import Attendance from "@/models/Attendance";
 import Holiday from "@/models/Holiday";
 
-connectDB();
 
 export async function POST(req: Request) {
+   await connectDB();
+
   try {
     const { schoolYear, month, year, day } = await req.json();
     if (!schoolYear || !month || !year || !day) {

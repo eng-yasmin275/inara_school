@@ -3,10 +3,11 @@ import connectDB from "@/utils/connectDB";
 import Attendance from "@/models/Attendance";
 import Holiday from "@/models/Holiday";
 
-connectDB();
 
 // ------------------- GET Attendance -------------------
 export async function GET(req: Request) {
+   await connectDB();
+
   try {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category") || "";
@@ -40,6 +41,8 @@ export async function GET(req: Request) {
 
 // ------------------- POST Save All Attendance -------------------
 export async function POST(req: Request) {
+    await connectDB();
+
   try {
     const body = await req.json();
     const { schoolYear, month, year, attendanceData, holidays } = body;

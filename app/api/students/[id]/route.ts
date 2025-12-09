@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/connectDB";
 import Student from "@/models/Student";
 
-connectDB();
 
 // Update a student by ID
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
+   await connectDB();
+
   try {
     const data = await req.json();
     const studentId = params.id;
@@ -44,6 +45,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 // Delete a student by ID
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+      await connectDB();
+
   try {
     const studentId = params.id;
 
