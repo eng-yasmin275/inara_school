@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Grade from "@/models/Grade";
 
+export const dynamic = 'force-dynamic';
+
+
 export async function PUT(req: Request) {
   try {
     await connectDB();
